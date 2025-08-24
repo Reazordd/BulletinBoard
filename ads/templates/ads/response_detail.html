@@ -1,10 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'ads/base.html' %}
+{% block title %}Отклик на объявление{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            <h2>Отклик на объявление: {{ response.advertisement.title }}</h2>
+            <p><strong>Статус:</strong> {{ response.get_status_display }}</p>
+            <p><strong>Отправитель:</strong>
+                <a href="{% url 'profile' response.sender.username %}">
+                    {{ response.sender.username }}
+                </a>
+            </p>
+            <p><strong>Получатель:</strong>
+                <a href="{% url 'profile' response.recipient.username %}">
+                    {{ response.recipient.username }}
+                </a>
+            </p>
+            <p><strong>Дата:</strong> {{ response.created_at|date:"d.m.Y H:i" }}</p>
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5>Текст отклика:</h5>
+                    <p>{{ response.text }}</p>
+                </div>
+            </div>
+
+            {% if user == response.recipient and response.status == 'new' %}
+                <div class="mt-3">
+                    <a href="{% url 'accept_response' response.pk %}" class="btn btn-success">Принять</a>
+                    <a href="{% url 'reject_response' response.pk %}" class="btn btn-danger">Отклонить</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

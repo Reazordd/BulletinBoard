@@ -1,10 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'ads/base.html' %}
+{% block title %}{{ advertisement.title }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            {% if advertisement.cover %}
+                <img src="{{ advertisement.cover.url }}" class="card-img-top mb-3" alt="{{ advertisement.title }}" style="max-height: 300px; object-fit: cover;">
+            {% endif %}
+
+            <h2 class="card-title">{{ advertisement.title }}</h2>
+            <p class="card-text">{{ advertisement.description }}</p>
+            <p class="card-text">
+                <strong>Цена:</strong> {{ advertisement.price }} руб.<br>
+                <strong>Город:</strong> {{ advertisement.city }}<br>
+                <strong>Автор:</strong>
+                <a href="{% url 'profile' advertisement.author.username %}">
+                    {{ advertisement.author.username }}
+                </a><br>
+                <strong>Дата:</strong> {{ advertisement.created_at|date:"d.m.Y H:i" }}
+            </p>
+
+            {% if user.is_authenticated and user != advertisement.author %}
+                <a href="{% url 'create_response' advertisement.slug %}" class="btn btn-primary">
+                    Оставить отклик
+                </a>
+            {% endif %}
+
+            {% if user == advertisement.author %}
+                <a href="{% url 'advertisement_update' advertisement.slug %}" class="btn btn-secondary">
+                    Редактировать
+                </a>
+                <a href="{% url 'advertisement_delete' advertisement.slug %}" class="btn btn-danger">
+                    Удалить
+                </a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

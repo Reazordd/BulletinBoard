@@ -1,8 +1,8 @@
 {% extends 'ads/base.html' %}
-{% block title %}Главная{% endblock %}
+{% block title %}Список объявлений{% endblock %}
 
 {% block content %}
-    <h1 class="mb-4">Последние объявления</h1>
+    <h1 class="mb-4">Все объявления</h1>
 
     {% if user.is_authenticated %}
         <a href="{% url 'advertisement_create' %}" class="btn btn-primary mb-4">Создать объявление</a>
@@ -14,6 +14,9 @@
                 <h5 class="card-title">
                     <a href="{% url 'advertisement_detail' advertisement.slug %}">{{ advertisement.title }}</a>
                 </h5>
+                {% if advertisement.cover %}
+                    <img src="{{ advertisement.cover.url }}" class="card-img-top mb-2" alt="{{ advertisement.title }}" style="max-height: 200px; object-fit: cover;">
+                {% endif %}
                 <p class="card-text">{{ advertisement.description|truncatechars:200 }}</p>
                 <p class="card-text">
                     <small class="text-muted">

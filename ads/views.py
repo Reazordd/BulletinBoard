@@ -29,6 +29,11 @@ class AdvertisementDetailView(DetailView):
     model = Advertisement
     template_name = 'ads/advertisement_detail.html'
 
+    def get_object(self, queryset=None):
+        # Получаем объект по slug вместо id
+        slug = self.kwargs.get('slug')
+        return get_object_or_404(Advertisement, slug=slug)
+
 class AdvertisementCreateView(LoginRequiredMixin, CreateView):
     model = Advertisement
     form_class = AdvertisementForm
@@ -41,6 +46,11 @@ class AdvertisementUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateVie
     model = Advertisement
     form_class = AdvertisementForm
 
+    def get_object(self, queryset=None):
+        # Получаем объект по slug вместо id
+        slug = self.kwargs.get('slug')
+        return get_object_or_404(Advertisement, slug=slug)
+
     def form_valid(self, form):
         form.instance.author = self.request.user
         return super().form_valid(form)
@@ -52,6 +62,11 @@ class AdvertisementUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateVie
 class AdvertisementDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Advertisement
     success_url = reverse_lazy('home')
+
+    def get_object(self, queryset=None):
+        # Получаем объект по slug вместо id
+        slug = self.kwargs.get('slug')
+        return get_object_or_404(Advertisement, slug=slug)
 
     def test_func(self):
         advertisement = self.get_object()
@@ -68,8 +83,8 @@ class ResponseDetailView(LoginRequiredMixin, DetailView):
         )
 
 @login_required
-def create_response(request, pk):
-    advertisement = get_object_or_404(Advertisement, pk=pk)
+def create_response(request, slug):  # Меняем pk на slug
+    advertisement = get_object_or_404(Advertisement, slug=slug)
     if request.method == 'POST':
         form = ResponseForm(request.POST)
         if form.is_valid():
@@ -79,7 +94,7 @@ def create_response(request, pk):
             response.recipient = advertisement.author
             response.save()
             messages.success(request, 'Ваш отклик успешно отправлен!')
-            return redirect('advertisement_detail', pk=pk)
+            return redirect('advertisement_detail', slug=slug)
     else:
         form = ResponseForm()
     return render(request, 'ads/response_form.html', {'form': form, 'advertisement': advertisement})

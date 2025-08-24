@@ -1,0 +1,13 @@
+{% extends 'ads/base.html' %}
+{% load crispy_forms_tags %}  <!-- Добавляем эту строку -->
+{% block title %}{% if form.instance.pk %}Редактирование{% else %}Создание{% endif %} объявления{% endblock %}
+
+{% block content %}
+    <h2>{% if form.instance.pk %}Редактирование{% else %}Создание{% endif %} объявления</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <a href="{% if form.instance.pk %}{% url 'advertisement_detail' form.instance.slug %}{% else %}{% url 'home' %}{% endif %}" class="btn btn-secondary">Отмена</a>
+    </form>
+{% endblock %}

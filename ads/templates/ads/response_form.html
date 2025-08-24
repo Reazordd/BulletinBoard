@@ -1,10 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'ads/base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Отклик на объявление{% endblock %}
+
+{% block content %}
+    <h2>Отклик на объявление: {{ advertisement.title }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary">Отправить отклик</button>
+        <a href="{% url 'advertisement_detail' advertisement.slug %}" class="btn btn-secondary">Отмена</a>
+    </form>
+{% endblock %}

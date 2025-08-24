@@ -15,21 +15,18 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-je^!)n=bvjqhym6-@o&k7i5y$*q9)@q776h&$ijhly8*a)ns-a'
+SECRET_KEY = 'django-insecure-your-secret-key-here-change-in-production'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -38,27 +35,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',  # Для работы с сайтами (нужен для allauth)
-    'allauth',  # Для аутентификации
-    'allauth.account',  # Для работы с аккаунтами
-    'allauth.socialaccount',  # Опционально: для социальной аутентификации
+
+    # Сторонние приложения
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'crispy_forms',
+    'crispy_bootstrap4',
+
+    # Локальные приложения
     'ads.apps.AdsConfig',  # Наше приложение с объявлениями
-    'crispy_forms',  # Для красивых форм
 ]
-
-SITE_ID = 1 # ID сайта для allauth
-
-# Настройки аутентификации
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',  # Стандартный бэкенд
-    'allauth.account.auth_backends.AuthenticationBackend',  # allauth бэкенд
-]
-
-# Перенаправления после входа/выхода
-LOGIN_REDIRECT_URL = '/'  # После входа перенаправляем на главную
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # После выхода - тоже на главную
-
-# Настройки crispy-forms
-CRISPY_TEMPLATE_PACK = 'bootstrap4'  # Используем Bootstrap 4 для оформления форм
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -66,9 +53,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    "allauth.account.middleware.AccountMiddleware",
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',  # Middleware для allauth
 ]
 
 ROOT_URLCONF = 'BulletinBoard.urls'
@@ -76,11 +63,12 @@ ROOT_URLCONF = 'BulletinBoard.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Глобальная папка шаблонов
+        'APP_DIRS': True,  # Искать шаблоны в папках приложений
         'OPTIONS': {
             'context_processors': [
-                'django.template.context_processors.request',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',  # Важно для allauth
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -90,10 +78,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'BulletinBoard.wsgi.application'
 
-
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -101,10 +87,8 @@ DATABASES = {
     }
 }
 
-
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
+# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -120,47 +104,95 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+# https://docs.djangoproject.com/en/4.2/topics/i18n/
+LANGUAGE_CODE = 'ru-ru'  # Русский язык
+TIME_ZONE = 'Europe/Moscow'  # Московское время
 USE_I18N = True
-
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+# https://docs.djangoproject.com/en/4.2/howto/static-files/
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Для collectstatic
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # Дополнительные статические файлы
 
-STATIC_URL = 'static/'
+# Media files (загружаемые пользователями)
+MEDIA_URL = '/media/'  # URL-префикс для медиафайлов
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Путь к медиафайлам
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
+# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Настройки allauth
-# ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_UNIQUE_EMAIL = True
-# ACCOUNT_USERNAME_REQUIRED = True
-# ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
-ACCOUNT_EMAIL_VERIFICATION = 'optional'
-ACCOUNT_LOGIN_METHODS = ['email', 'username']  # Методы входа
-ACCOUNT_SIGNUP_FIELDS = ['email', 'username']  # Обязательные поля при регистрации
-ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Подтверждение email
+# Django Allauth settings
+# https://django-allauth.readthedocs.io/en/latest/configuration.html
+SITE_ID = 1  # ID сайта для мультисайтовости
 
-# Настройки медиа
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Настройки аутентификации
+AUTHENTICATION_BACKENDS = [
+    # Необходимо для входа по username в Django admin, независимо от allauth
+    'django.contrib.auth.backends.ModelBackend',
+    # Специфические методы аутентификации allauth, такие как вход по e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
-# Настройки статических файлов
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+# Настройки аккаунтов
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'  # Вход по username или email
+ACCOUNT_EMAIL_REQUIRED = True  # Email обязателен при регистрации
+ACCOUNT_USERNAME_REQUIRED = True  # Username обязателен при регистрации
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Подтверждение email не обязательно
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True  # Пароль нужно ввести дважды
+ACCOUNT_SESSION_REMEMBER = True  # Запоминать пользователя
+ACCOUNT_UNIQUE_EMAIL = True  # Уникальный email
 
-# Crispy forms
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
+# Перенаправления
+LOGIN_REDIRECT_URL = '/'  # После входа - на главную
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # После выхода - на главную
+LOGIN_URL = '/accounts/login/'  # URL для входа
+
+# Crispy Forms settings
+# https://django-crispy-forms.readthedocs.io/en/latest/
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
+CRISPY_TEMPLATE_PACK = "bootstrap4"  # Используем Bootstrap 4 для форм
+
+# Email settings (для разработки)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Вывод email в консоль
+
+# Настройки сессии
+SESSION_COOKIE_AGE = 1209600 # 2 недели в секундах
+SESSION_SAVE_EVERY_REQUEST = True  # Сохранять сессию при каждом запросе
+
+# Настройки безопасности (для разработки, в production изменить!)
+if DEBUG:
+    # Разрешаем все хосты в режиме отладки
+    ALLOWED_HOSTS = ['*']
+
+    # Отключаем некоторые проверки безопасности для разработки
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+else:
+    # Настройки для production
+    ALLOWED_HOSTS = ['your-domain.com', 'www.your-domain.com']
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+
+# Логирование
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
