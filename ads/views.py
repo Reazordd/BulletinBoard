@@ -6,8 +6,23 @@ from django.contrib.auth.models import User
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.db import models
-from .models import Advertisement, Response, City
+from .models import Advertisement, Response, City, Category
 from .forms import AdvertisementForm, ResponseForm
+
+class CategoryAdvertisementListView(ListView):
+    model = Advertisement
+    template_name = 'ads/category_ads.html'
+    context_object_name = 'advertisements'
+    paginate_by = 10
+
+    def get_queryset(self):
+        self.category = get_object_or_404(Category, slug=self.kwargs['category_slug'])
+        return Advertisement.objects.filter(category=self.category).order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['category'] = self.category
+        return context
 
 class AdvertisementListView(ListView):
     model = Advertisement
@@ -15,6 +30,11 @@ class AdvertisementListView(ListView):
     context_object_name = 'advertisements'
     ordering = ['-created_at']
     paginate_by = 10
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()  # Добавляем категории в контекст
+        return context
 
 class UserAdvertisementListView(LoginRequiredMixin, ListView):
     model = Advertisement

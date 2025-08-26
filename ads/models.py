@@ -1,8 +1,35 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.utils.text import slugify  # Добавляем импорт
-import os  # Добавляем импорт
+from django.utils.text import slugify
+import os
+
+class Category(models.Model):
+    name = models.CharField(max_length=100, verbose_name="Название категории")
+    slug = models.SlugField(max_length=100, unique=True, verbose_name="URL-адрес категории")
+    description = models.TextField(blank=True, verbose_name="Описание категории")
+
+    class Meta:
+        verbose_name = "Категория"
+        verbose_name_plural = "Категории"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('category_ads', kwargs={'category_slug': self.slug})
+
+    def save(self, *args, **kwargs):
+        if not self.slug or self.slug == '':
+            self.slug = slugify(self.name)
+            # Убедимся, что slug уникален
+            original_slug = self.slug
+            counter = 1
+            while Category.objects.filter(slug=self.slug).exclude(id=self.id).exists():
+                self.slug = f"{original_slug}-{counter}"
+                counter += 1
+        super().save(*args, **kwargs)
 
 class City(models.Model):
     name = models.CharField(max_length=100)
@@ -12,12 +39,13 @@ class City(models.Model):
 
 class Advertisement(models.Model):
     title = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=200, unique=True, blank=True)  # Добавляем поле slug
+    slug = models.SlugField(max_length=200, unique=True, blank=True)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     city = models.ForeignKey(City, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name="Категория")  # Добавляем категорию
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    cover = models.ImageField(upload_to='covers/%Y/%m/%d/', blank=True, null=True)  # Добавляем поле для обложки
+    cover = models.ImageField(upload_to='covers/%Y/%m/%d/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -25,10 +53,8 @@ class Advertisement(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
-        # Автоматически создаем slug из заголовка
         if not self.slug:
             self.slug = slugify(self.title)
-            # Убеждаемся, что slug уникален
             original_slug = self.slug
             counter = 1
             while Advertisement.objects.filter(slug=self.slug).exists():
@@ -37,13 +63,11 @@ class Advertisement(models.Model):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('advertisement_detail', args=[str(self.slug)])  # Меняем на slug
+        return reverse('advertisement_detail', args=[str(self.slug)])
 
     def delete(self, *args, **kwargs):
-        # Удаляем файл обложки при удалении объявления
-        if self.cover:
-            if os.path.isfile(self.cover.path):
-                os.remove(self.cover.path)
+        if self.cover and os.path.isfile(self.cover.path):
+            os.remove(self.cover.path)
         super().delete(*args, **kwargs)
 
 class Response(models.Model):
