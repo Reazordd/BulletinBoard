@@ -4,6 +4,57 @@ from django.urls import reverse
 from django.utils.text import slugify
 import os
 
+class City(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="Название города")
+    slug = models.SlugField(max_length=100, unique=True, verbose_name="URL-адрес города")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Город"
+        verbose_name_plural = "Города"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+            original_slug = self.slug
+            counter = 1
+            while City.objects.filter(slug=self.slug).exclude(id=self.id).exists():
+                self.slug = f"{original_slug}-{counter}"
+                counter += 1
+        super().save(*args, **kwargs)
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True, verbose_name="Название тега")
+    slug = models.SlugField(max_length=50, unique=True, verbose_name="URL-адрес тега")
+    color = models.CharField(max_length=7, default="#007bff", verbose_name="Цвет тега")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Тег"
+        verbose_name_plural = "Теги"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('tag_ads', kwargs={'tag_slug': self.slug})
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+            original_slug = self.slug
+            counter = 1
+            while Tag.objects.filter(slug=self.slug).exclude(id=self.id).exists():
+                self.slug = f"{original_slug}-{counter}"
+                counter += 1
+        super().save(*args, **kwargs)
+
 class Category(models.Model):
     name = models.CharField(max_length=100, verbose_name="Название категории")
     slug = models.SlugField(max_length=100, unique=True, verbose_name="URL-адрес категории")
@@ -21,14 +72,8 @@ class Category(models.Model):
         return reverse('category_ads', kwargs={'category_slug': self.slug})
 
     def save(self, *args, **kwargs):
-        if not self.slug or self.slug == '':
+        if not self.slug:
             self.slug = slugify(self.name)
-            # Убедимся, что slug уникален
-            original_slug = self.slug
-            counter = 1
-            while Category.objects.filter(slug=self.slug).exclude(id=self.id).exists():
-                self.slug = f"{original_slug}-{counter}"
-                counter += 1
         super().save(*args, **kwargs)
 
 class City(models.Model):
@@ -43,7 +88,8 @@ class Advertisement(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     city = models.ForeignKey(City, on_delete=models.CASCADE)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name="Категория")  # Добавляем категорию
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name="Категория")
+    tags = models.ManyToManyField(Tag, blank=True, verbose_name="Теги")
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     cover = models.ImageField(upload_to='covers/%Y/%m/%d/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

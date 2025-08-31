@@ -1,13 +1,70 @@
 {% extends 'ads/base.html' %}
-{% load crispy_forms_tags %}  <!-- Добавляем эту строку -->
+{% load crispy_forms_tags %}
 {% block title %}{% if form.instance.pk %}Редактирование{% else %}Создание{% endif %} объявления{% endblock %}
 
 {% block content %}
     <h2>{% if form.instance.pk %}Редактирование{% else %}Создание{% endif %} объявления</h2>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form|crispy }}
+
+        <!-- Основные поля -->
+        {{ form.title|as_crispy_field }}
+        {{ form.description|as_crispy_field }}
+        {{ form.price|as_crispy_field }}
+        {{ form.category|as_crispy_field }}
+
+        <!-- Поля города -->
+        <div class="card mb-3">
+            <div class="card-header">Город</div>
+            <div class="card-body">
+                {{ form.city|as_crispy_field }}
+                <div class="text-center my-2">ИЛИ</div>
+                {{ form.new_city|as_crispy_field }}
+            </div>
+        </div>
+
+        {{ form.cover|as_crispy_field }}
+
+        <!-- Поле тегов -->
+        <div class="card mb-3">
+            <div class="card-header">Теги</div>
+            <div class="card-body">
+                <div class="row">
+                    {% for checkbox in form.tags %}
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                    {{ checkbox.choice_label }}
+                                </label>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-primary">Сохранить</button>
         <a href="{% if form.instance.pk %}{% url 'advertisement_detail' form.instance.slug %}{% else %}{% url 'home' %}{% endif %}" class="btn btn-secondary">Отмена</a>
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const citySelect = document.getElementById('id_city');
+            const newCityInput = document.getElementById('id_new_city');
+
+            function toggleCityFields() {
+                if (citySelect.value) {
+                    newCityInput.disabled = true;
+                    newCityInput.placeholder = 'Выбран город из списка';
+                } else {
+                    newCityInput.disabled = false;
+                    newCityInput.placeholder = 'Введите название города';
+                }
+            }
+
+            citySelect.addEventListener('change', toggleCityFields);
+            toggleCityFields(); // Initial call
+        });
+    </script>
 {% endblock %}

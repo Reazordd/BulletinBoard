@@ -6,8 +6,16 @@ from django.contrib.auth.models import User
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.db import models
-from .models import Advertisement, Response, City, Category
-from .forms import AdvertisementForm, ResponseForm
+from django.db.models import Q
+from .models import Advertisement, Response, City, Category, Tag
+from .forms import AdvertisementForm, ResponseForm, TagForm
+
+class CityListView(ListView):
+    model = City
+    template_name = 'ads/city_list.html'
+    context_object_name = 'cities'
+    paginate_by = 50
+    ordering = ['name']
 
 class CategoryAdvertisementListView(ListView):
     model = Advertisement
@@ -24,6 +32,37 @@ class CategoryAdvertisementListView(ListView):
         context['category'] = self.category
         return context
 
+class TagAdvertisementListView(ListView):
+    model = Advertisement
+    template_name = 'ads/tag_ads.html'
+    context_object_name = 'advertisements'
+    paginate_by = 10
+
+    def get_queryset(self):
+        self.tag = get_object_or_404(Tag, slug=self.kwargs['tag_slug'])
+        return Advertisement.objects.filter(tags=self.tag).order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tag'] = self.tag
+        return context
+
+class TagCreateView(LoginRequiredMixin, CreateView):
+    model = Tag
+    form_class = TagForm
+    template_name = 'ads/add_tag.html'
+    success_url = reverse_lazy('tag_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Тег успешно создан!')
+        return super().form_valid(form)
+
+class TagListView(ListView):
+    model = Tag
+    template_name = 'ads/tag_list.html'
+    context_object_name = 'tags'
+    paginate_by = 20
+
 class AdvertisementListView(ListView):
     model = Advertisement
     template_name = 'ads/home.html'
@@ -33,7 +72,8 @@ class AdvertisementListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['categories'] = Category.objects.all()  # Добавляем категории в контекст
+        context['categories'] = Category.objects.all()
+        context['tags'] = Tag.objects.all()[:10]
         return context
 
 class UserAdvertisementListView(LoginRequiredMixin, ListView):
@@ -50,7 +90,6 @@ class AdvertisementDetailView(DetailView):
     template_name = 'ads/advertisement_detail.html'
 
     def get_object(self, queryset=None):
-        # Получаем объект по slug вместо id
         slug = self.kwargs.get('slug')
         return get_object_or_404(Advertisement, slug=slug)
 
@@ -67,7 +106,6 @@ class AdvertisementUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateVie
     form_class = AdvertisementForm
 
     def get_object(self, queryset=None):
-        # Получаем объект по slug вместо id
         slug = self.kwargs.get('slug')
         return get_object_or_404(Advertisement, slug=slug)
 
@@ -84,7 +122,6 @@ class AdvertisementDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteVie
     success_url = reverse_lazy('home')
 
     def get_object(self, queryset=None):
-        # Получаем объект по slug вместо id
         slug = self.kwargs.get('slug')
         return get_object_or_404(Advertisement, slug=slug)
 
@@ -103,7 +140,7 @@ class ResponseDetailView(LoginRequiredMixin, DetailView):
         )
 
 @login_required
-def create_response(request, slug):  # Меняем pk на slug
+def create_response(request, slug):
     advertisement = get_object_or_404(Advertisement, slug=slug)
     if request.method == 'POST':
         form = ResponseForm(request.POST)

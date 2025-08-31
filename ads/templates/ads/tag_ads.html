@@ -1,16 +1,12 @@
 {% extends 'ads/base.html' %}
-{% block title %}Объявления в категории: {{ category.name }}{% endblock %}
+{% block title %}Объявления с тегом: {{ tag.name }}{% endblock %}
 
 {% block content %}
-    <h1 class="mb-4">Объявления в категории: {{ category.name }}</h1>
-
-    {% if category.description %}
-        <p class="text-muted mb-4">{{ category.description }}</p>
-    {% endif %}
-
-    {% if user.is_authenticated %}
-        <a href="{% url 'advertisement_create' %}" class="btn btn-primary mb-4">Создать объявление</a>
-    {% endif %}
+    <h1 class="mb-4">Объявления с тегом:
+        <span class="badge" style="background-color: {{ tag.color }}; color: white;">
+            {{ tag.name }}
+        </span>
+    </h1>
 
     {% for advertisement in advertisements %}
         <div class="card mb-3">
@@ -25,8 +21,7 @@
                 <p class="card-text">
                     <small class="text-muted">
                         {{ advertisement.price }} руб. | {{ advertisement.city }} |
-                        {{ advertisement.created_at|date:"d.m.Y H:i" }} |
-                        <a href="{% url 'profile' advertisement.author.username %}">{{ advertisement.author.username }}</a>
+                        {{ advertisement.created_at|date:"d.m.Y H:i" }}
                     </small>
                 </p>
                 <div class="mt-2">
@@ -39,7 +34,7 @@
             </div>
         </div>
     {% empty %}
-        <p>В этой категории пока нет объявлений.</p>
+        <p>С этим тегом пока нет объявлений.</p>
     {% endfor %}
 
     {% if is_paginated %}
