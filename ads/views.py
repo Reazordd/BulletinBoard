@@ -1,21 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.db import models
 from django.db.models import Q
+from django.http import HttpResponseRedirect
 from .models import Advertisement, Response, City, Category, Tag
 from .forms import AdvertisementForm, ResponseForm, TagForm
-
-class CityListView(ListView):
-    model = City
-    template_name = 'ads/city_list.html'
-    context_object_name = 'cities'
-    paginate_by = 50
-    ordering = ['name']
 
 class CategoryAdvertisementListView(ListView):
     model = Advertisement
@@ -63,6 +56,13 @@ class TagListView(ListView):
     context_object_name = 'tags'
     paginate_by = 20
 
+class CityListView(ListView):
+    model = City
+    template_name = 'ads/city_list.html'
+    context_object_name = 'cities'
+    paginate_by = 50
+    ordering = ['name']
+
 class AdvertisementListView(ListView):
     model = Advertisement
     template_name = 'ads/home.html'
@@ -74,6 +74,7 @@ class AdvertisementListView(ListView):
         context = super().get_context_data(**kwargs)
         context['categories'] = Category.objects.all()
         context['tags'] = Tag.objects.all()[:10]
+        context['cities'] = City.objects.all()[:10]
         return context
 
 class UserAdvertisementListView(LoginRequiredMixin, ListView):
@@ -93,17 +94,25 @@ class AdvertisementDetailView(DetailView):
         slug = self.kwargs.get('slug')
         return get_object_or_404(Advertisement, slug=slug)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['response_form'] = ResponseForm()
+        return context
+
 class AdvertisementCreateView(LoginRequiredMixin, CreateView):
     model = Advertisement
     form_class = AdvertisementForm
+    template_name = 'ads/advertisement_form.html'
 
     def form_valid(self, form):
         form.instance.author = self.request.user
+        messages.success(self.request, 'Объявление успешно создано!')
         return super().form_valid(form)
 
 class AdvertisementUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Advertisement
     form_class = AdvertisementForm
+    template_name = 'ads/advertisement_form.html'
 
     def get_object(self, queryset=None):
         slug = self.kwargs.get('slug')
@@ -111,6 +120,7 @@ class AdvertisementUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateVie
 
     def form_valid(self, form):
         form.instance.author = self.request.user
+        messages.success(self.request, 'Объявление успешно обновлено!')
         return super().form_valid(form)
 
     def test_func(self):
@@ -119,6 +129,7 @@ class AdvertisementUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateVie
 
 class AdvertisementDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Advertisement
+    template_name = 'ads/advertisement_confirm_delete.html'
     success_url = reverse_lazy('home')
 
     def get_object(self, queryset=None):
@@ -128,6 +139,10 @@ class AdvertisementDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteVie
     def test_func(self):
         advertisement = self.get_object()
         return self.request.user == advertisement.author
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Объявление успешно удалено!')
+        return super().delete(request, *args, **kwargs)
 
 class ResponseDetailView(LoginRequiredMixin, DetailView):
     model = Response
@@ -139,56 +154,64 @@ class ResponseDetailView(LoginRequiredMixin, DetailView):
             models.Q(recipient=self.request.user)
         )
 
-@login_required
-def create_response(request, slug):
-    advertisement = get_object_or_404(Advertisement, slug=slug)
-    if request.method == 'POST':
-        form = ResponseForm(request.POST)
-        if form.is_valid():
-            response = form.save(commit=False)
-            response.advertisement = advertisement
-            response.sender = request.user
-            response.recipient = advertisement.author
-            response.save()
-            messages.success(request, 'Ваш отклик успешно отправлен!')
-            return redirect('advertisement_detail', slug=slug)
-    else:
-        form = ResponseForm()
-    return render(request, 'ads/response_form.html', {'form': form, 'advertisement': advertisement})
+class ResponseCreateView(LoginRequiredMixin, CreateView):
+    form_class = ResponseForm
+    template_name = 'ads/response_form.html'
 
-@login_required
-def accept_response(request, pk):
-    response = get_object_or_404(Response, pk=pk)
-    if request.user != response.recipient:
-        return redirect('home')
-    response.status = 'accepted'
-    response.save()
-    messages.success(request, 'Отклик принят!')
-    return redirect('profile', username=request.user.username)
+    def dispatch(self, request, *args, **kwargs):
+        self.advertisement = get_object_or_404(Advertisement, slug=kwargs['slug'])
+        return super().dispatch(request, *args, **kwargs)
 
-@login_required
-def reject_response(request, pk):
-    response = get_object_or_404(Response, pk=pk)
-    if request.user != response.recipient:
-        return redirect('home')
-    response.status = 'rejected'
-    response.save()
-    messages.success(request, 'Отклик отклонён.')
-    return redirect('profile', username=request.user.username)
+    def form_valid(self, form):
+        response = form.save(commit=False)
+        response.advertisement = self.advertisement
+        response.sender = self.request.user
+        response.recipient = self.advertisement.author
+        response.save()
+        messages.success(self.request, 'Ваш отклик успешно отправлен!')
+        return redirect('advertisement_detail', slug=self.advertisement.slug)
 
-@login_required
-def profile_view(request, username):
-    user = get_object_or_404(User, username=username)
-    advertisements = Advertisement.objects.filter(author=user)
-    received_responses = Response.objects.filter(recipient=user).order_by('-created_at')
-    sent_responses = Response.objects.filter(sender=user).order_by('-created_at')
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['advertisement'] = self.advertisement
+        return context
 
-    context = {
-        'profile_user': user,
-        'advertisements': advertisements,
-        'received_responses': received_responses,
-        'sent_responses': sent_responses,
-    }
+class ResponseAcceptView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        response = get_object_or_404(Response, pk=self.kwargs['pk'])
+        return self.request.user == response.recipient
 
-    return render(request, 'ads/profile.html', context)
+    def get(self, request, *args, **kwargs):
+        response = get_object_or_404(Response, pk=kwargs['pk'])
+        response.status = 'accepted'
+        response.save()
+        messages.success(request, 'Отклик принят!')
+        return redirect('profile', username=request.user.username)
+
+class ResponseRejectView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        response = get_object_or_404(Response, pk=self.kwargs['pk'])
+        return self.request.user == response.recipient
+
+    def get(self, request, *args, **kwargs):
+        response = get_object_or_404(Response, pk=kwargs['pk'])
+        response.status = 'rejected'
+        response.save()
+        messages.success(request, 'Отклик отклонён.')
+        return redirect('profile', username=request.user.username)
+
+class ProfileView(LoginRequiredMixin, DetailView):
+    model = User
+    template_name = 'ads/profile.html'
+    context_object_name = 'profile_user'
+    slug_field = 'username'
+    slug_url_kwarg = 'username'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.get_object()
+        context['advertisements'] = Advertisement.objects.filter(author=user)
+        context['received_responses'] = Response.objects.filter(recipient=user).order_by('-created_at')
+        context['sent_responses'] = Response.objects.filter(sender=user).order_by('-created_at')
+        return context
 

@@ -66,7 +66,6 @@ class AdvertisementForm(forms.ModelForm):
 
         new_city = self.cleaned_data.get('new_city')
         if new_city:
-            # Создаем новый город или находим существующий
             city, created = City.objects.get_or_create(
                 name=new_city.strip(),
                 defaults={'name': new_city.strip()}

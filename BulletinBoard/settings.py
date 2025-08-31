@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+
 import os
 from pathlib import Path
 
@@ -137,12 +138,10 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-# Настройки аккаунтов
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email'  # Вход по username или email
-ACCOUNT_EMAIL_REQUIRED = True  # Email обязателен при регистрации
-ACCOUNT_USERNAME_REQUIRED = True  # Username обязателен при регистрации
+# Новые настройки аккаунтов (современные)
+ACCOUNT_SIGNUP_FIELDS = ['email', 'username', 'password1', 'password2']
+ACCOUNT_LOGIN_METHODS = ['username', 'email']
 ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Подтверждение email не обязательно
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True  # Пароль нужно ввести дважды
 ACCOUNT_SESSION_REMEMBER = True  # Запоминать пользователя
 ACCOUNT_UNIQUE_EMAIL = True  # Уникальный email
 
@@ -160,7 +159,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"  # Используем Bootstrap 4 для �
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Вывод email в консоль
 
 # Настройки сессии
-SESSION_COOKIE_AGE = 1209600 # 2 недели в секундах
+SESSION_COOKIE_AGE = 1209600  # 2 недели в секундах
 SESSION_SAVE_EVERY_REQUEST = True  # Сохранять сессию при каждом запросе
 
 # Настройки безопасности (для разработки, в production изменить!)
@@ -196,3 +195,9 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+# Устаревшие настройки allauth (ЗАКОММЕНТИРУЙТЕ или УДАЛИТЕ эти строки):
+# ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+# ACCOUNT_EMAIL_REQUIRED = True
+# ACCOUNT_USERNAME_REQUIRED = True
+# ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True

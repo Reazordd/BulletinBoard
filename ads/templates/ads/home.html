@@ -4,17 +4,30 @@
 {% block content %}
     <h1 class="mb-4">Последние объявления</h1>
 
-    <!-- Добавляем список категорий -->
+    <!-- Категории -->
     <div class="mb-4">
         <h5>Категории:</h5>
         <div class="d-flex flex-wrap gap-2">
             {% for category in categories %}
-                {% if category.slug %}  <!-- Добавляем проверку -->
+                {% if category.slug %}
                     <a href="{% url 'category_ads' category.slug %}" class="btn btn-outline-primary btn-sm">
                         {{ category.name }}
                     </a>
                 {% endif %}
             {% endfor %}
+        </div>
+    </div>
+
+    <!-- Теги -->
+    <div class="mb-4">
+        <h5>Популярные теги:</h5>
+        <div class="d-flex flex-wrap gap-2">
+            {% for tag in tags %}
+                <a href="{% url 'tag_ads' tag.slug %}" class="badge" style="background-color: {{ tag.color }}; color: white; text-decoration: none; padding: 8px 12px;">
+                    {{ tag.name }}
+                </a>
+            {% endfor %}
+            <a href="{% url 'tag_list' %}" class="btn btn-outline-secondary btn-sm">Все теги →</a>
         </div>
     </div>
 
@@ -28,23 +41,32 @@
                 <h5 class="card-title">
                     <a href="{% url 'advertisement_detail' advertisement.slug %}">{{ advertisement.title }}</a>
                 </h5>
+                {% if advertisement.cover %}
+                    <img src="{{ advertisement.cover.url }}" class="card-img-top mb-2" alt="{{ advertisement.title }}" style="max-height: 200px; object-fit: cover;">
+                {% endif %}
                 <p class="card-text">{{ advertisement.description|truncatechars:200 }}</p>
                 <p class="card-text">
                     <small class="text-muted">
                         {{ advertisement.price }} руб. | {{ advertisement.city }} |
-                        {{ advertisement.created_at|date:"d.m.Y H:i" }} |
+                        {{ advertisement.category }}<br>
+                        Создано: {{ advertisement.created_at|date:"d.m.Y H:i" }} |
+                        Обновлено: {{ advertisement.updated_at|date:"d.m.Y H:i" }}<br>
                         <a href="{% url 'profile' advertisement.author.username %}">{{ advertisement.author.username }}</a>
                     </small>
                 </p>
+                <!-- Теги объявления -->
+                <div class="mt-2">
+                    {% for tag in advertisement.tags.all %}
+                        <a href="{% url 'tag_ads' tag.slug %}" class="badge" style="background-color: {{ tag.color }}; color: white; text-decoration: none; margin-right: 5px;">
+                            {{ tag.name }}
+                        </a>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     {% empty %}
         <p>Объявлений пока нет.</p>
     {% endfor %}
-
-    {% if advertisement.cover %}
-        <img src="{{ advertisement.cover.url }}" class="card-img-top mb-2" alt="{{ advertisement.title }}" style="max-height: 200px; object-fit: cover;">
-    {% endif %}
 
     {% if is_paginated %}
         <nav aria-label="Page navigation">

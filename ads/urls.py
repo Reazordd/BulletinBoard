@@ -8,6 +8,7 @@ urlpatterns = [
     path('tag/<slug:tag_slug>/', views.TagAdvertisementListView.as_view(), name='tag_ads'),
     path('tags/', views.TagListView.as_view(), name='tag_list'),
     path('tag/add/', views.TagCreateView.as_view(), name='add_tag'),
+    path('cities/', views.CityListView.as_view(), name='city_list'),
 
     path('advertisement/new/', views.AdvertisementCreateView.as_view(), name='advertisement_create'),
     path('advertisement/<slug:slug>/', views.AdvertisementDetailView.as_view(), name='advertisement_detail'),
@@ -15,10 +16,9 @@ urlpatterns = [
     path('advertisement/<slug:slug>/delete/', views.AdvertisementDeleteView.as_view(), name='advertisement_delete'),
 
     path('response/<int:pk>/', views.ResponseDetailView.as_view(), name='response_detail'),
-    path('response/<int:pk>/accept/', views.accept_response, name='accept_response'),
-    path('response/<int:pk>/reject/', views.reject_response, name='reject_response'),
-    path('advertisement/<slug:slug>/respond/', views.create_response, name='create_response'),
+    path('response/<int:pk>/accept/', views.ResponseAcceptView.as_view(), name='accept_response'),
+    path('response/<int:pk>/reject/', views.ResponseRejectView.as_view(), name='reject_response'),
+    path('advertisement/<slug:slug>/respond/', views.ResponseCreateView.as_view(), name='create_response'),
 
-    path('profile/<str:username>/', views.profile_view, name='profile'),
-    path('cities/', views.CityListView.as_view(), name='city_list'),
+    path('profile/<str:username>/', views.ProfileView.as_view(), name='profile'),
 ]
