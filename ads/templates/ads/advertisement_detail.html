@@ -18,8 +18,8 @@
                 <a href="{% url 'profile' advertisement.author.username %}">
                     {{ advertisement.author.username }}
                 </a><br>
-                <strong>Создано:</strong> {{ advertisement.created_at|date:"d.m.Y H:i" }}<br>
-                <strong>Обновлено:</strong> {{ advertisement.updated_at|date:"d.m.Y H:i" }}
+                <strong>Создано:</strong> <time datetime="{{ advertisement.created_at|date:'c' }}">{{ advertisement.created_at|date:"d.m.Y H:i" }}</time><br>
+                <strong>Обновлено:</strong> <time datetime="{{ advertisement.updated_at|date:'c' }}">{{ advertisement.updated_at|date:"d.m.Y H:i" }}</time>
             </p>
 
             <!-- Теги -->

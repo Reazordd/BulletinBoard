@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views_auth import CustomLoginView, CustomSignupView, CustomLogoutView
 
 urlpatterns = [
     path('', views.AdvertisementListView.as_view(), name='home'),
@@ -21,4 +22,9 @@ urlpatterns = [
     path('advertisement/<slug:slug>/respond/', views.ResponseCreateView.as_view(), name='create_response'),
 
     path('profile/<str:username>/', views.ProfileView.as_view(), name='profile'),
+
+    # Кастомные auth views
+    path('accounts/login/', CustomLoginView.as_view(), name='account_login'),
+    path('accounts/signup/', CustomSignupView.as_view(), name='account_signup'),
+    path('accounts/logout/', CustomLogoutView.as_view(), name='account_logout'),
 ]

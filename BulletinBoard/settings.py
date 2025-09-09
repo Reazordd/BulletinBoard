@@ -196,8 +196,26 @@ LOGGING = {
     },
 }
 
-# Устаревшие настройки allauth (ЗАКОММЕНТИРУЙТЕ или УДАЛИТЕ эти строки):
-# ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
-# ACCOUNT_EMAIL_REQUIRED = True
-# ACCOUNT_USERNAME_REQUIRED = True
-# ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
+# Настройки allauth
+ACCOUNT_SIGNUP_FIELDS = ['email', 'username']
+ACCOUNT_LOGIN_METHODS = ['username']
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+LOGIN_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+
+# Локализация
+USE_L10N = True
+USE_TZ = True
+
+# Middleware для локализации
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',  # Добавляем для локализации
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+]

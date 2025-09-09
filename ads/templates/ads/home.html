@@ -49,12 +49,11 @@
                     <small class="text-muted">
                         {{ advertisement.price }} руб. | {{ advertisement.city }} |
                         {{ advertisement.category }}<br>
-                        Создано: {{ advertisement.created_at|date:"d.m.Y H:i" }} |
-                        Обновлено: {{ advertisement.updated_at|date:"d.m.Y H:i" }}<br>
+                        Создано: <time datetime="{{ advertisement.created_at|date:'c' }}">{{ advertisement.created_at|date:"d.m.Y H:i" }}</time> |
+                        Обновлено: <time datetime="{{ advertisement.updated_at|date:'c' }}">{{ advertisement.updated_at|date:"d.m.Y H:i" }}</time><br>
                         <a href="{% url 'profile' advertisement.author.username %}">{{ advertisement.author.username }}</a>
                     </small>
                 </p>
-                <!-- Теги объявления -->
                 <div class="mt-2">
                     {% for tag in advertisement.tags.all %}
                         <a href="{% url 'tag_ads' tag.slug %}" class="badge" style="background-color: {{ tag.color }}; color: white; text-decoration: none; margin-right: 5px;">

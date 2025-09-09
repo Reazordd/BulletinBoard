@@ -12,8 +12,12 @@
                     <div class="card-body">
                         <h5><a href="{% url 'advertisement_detail' ad.slug %}">{{ ad.title }}</a></h5>
                         <p>{{ ad.price }} руб., {{ ad.city }}</p>
+                        <small class="text-muted">
+                            Создано: <time datetime="{{ ad.created_at|date:'c' }}">{{ ad.created_at|date:"d.m.Y H:i" }}</time><br>
+                            Обновлено: <time datetime="{{ ad.updated_at|date:'c' }}">{{ ad.updated_at|date:"d.m.Y H:i" }}</time>
+                        </small>
                         {% if ad.cover %}
-                            <img src="{{ ad.cover.url }}" alt="{{ ad.title }}" style="max-height: 100px; object-fit: cover;" class="img-fluid">
+                            <img src="{{ ad.cover.url }}" alt="{{ ad.title }}" style="max-height: 100px; object-fit: cover;" class="img-fluid mt-2">
                         {% endif %}
                     </div>
                 </div>
@@ -35,7 +39,7 @@
                         <p>{{ response.text }}</p>
                         <p>
                             От: <a href="{% url 'profile' response.sender.username %}">{{ response.sender.username }}</a> |
-                            {{ response.created_at|date:"d.m.Y H:i" }} |
+                            <time datetime="{{ response.created_at|date:'c' }}">{{ response.created_at|date:"d.m.Y H:i" }}</time> |
                             Статус: {{ response.get_status_display }}
                         </p>
                         {% if response.status == 'new' and user == profile_user %}
@@ -60,7 +64,7 @@
                         <p>{{ response.text }}</p>
                         <p>
                             Кому: <a href="{% url 'profile' response.recipient.username %}">{{ response.recipient.username }}</a> |
-                            {{ response.created_at|date:"d.m.Y H:i" }} |
+                            <time datetime="{{ response.created_at|date:'c' }}">{{ response.created_at|date:"d.m.Y H:i" }}</time> |
                             Статус: {{ response.get_status_display }}
                         </p>
                     </div>
