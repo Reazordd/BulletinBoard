@@ -54,7 +54,7 @@ class Category(models.Model):
 
 class City(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Название города")
-    slug = models.SlugField(max_length=100, unique=True, verbose_name="URL-адрес города")  # Убираем blank=True, null=True
+    slug = models.SlugField(max_length=100, unique=True, verbose_name="URL-адрес города")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -86,7 +86,8 @@ class Advertisement(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     cover = models.ImageField(upload_to='covers/%Y/%m/%d/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)  # Добавляем auto_now=True
+    updated_at = models.DateTimeField(auto_now=True)
+    views = models.PositiveIntegerField(default=0, verbose_name="Просмотры")
 
     def __str__(self):
         return self.title
@@ -103,6 +104,11 @@ class Advertisement(models.Model):
 
     def get_absolute_url(self):
         return reverse('advertisement_detail', args=[str(self.slug)])
+
+    def increment_views(self):
+        """Увеличивает счетчик просмотров"""
+        self.views += 1
+        self.save(update_fields=['views'])
 
     def delete(self, *args, **kwargs):
         if self.cover and os.path.isfile(self.cover.path):

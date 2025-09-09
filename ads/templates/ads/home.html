@@ -4,13 +4,56 @@
 {% block content %}
     <h1 class="mb-4">Последние объявления</h1>
 
+    <!-- Форма поиска и фильтрации -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="q" class="form-control" placeholder="Поиск..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="sort" class="form-select" onchange="this.form.submit()">
+                        <option value="-created_at" {% if current_sort == '-created_at' %}selected{% endif %}>Сначала новые</option>
+                        <option value="created_at" {% if current_sort == 'created_at' %}selected{% endif %}>Сначала старые</option>
+                        <option value="-price" {% if current_sort == '-price' %}selected{% endif %}>Цена по убыванию</option>
+                        <option value="price" {% if current_sort == 'price' %}selected{% endif %}>Цена по возрастанию</option>
+                        <option value="-views" {% if current_sort == '-views' %}selected{% endif %}>Популярные</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="category" class="form-select" onchange="this.form.submit()">
+                        <option value="">Все категории</option>
+                        {% for category in categories %}
+                            <option value="{{ category.slug }}" {% if current_category == category.slug %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="city" class="form-select" onchange="this.form.submit()">
+                        <option value="">Все города</option>
+                        {% for city in cities %}
+                            <option value="{{ city.slug }}" {% if current_city == city.slug %}selected{% endif %}>
+                                {{ city.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Применить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Категории -->
     <div class="mb-4">
         <h5>Категории:</h5>
         <div class="d-flex flex-wrap gap-2">
             {% for category in categories %}
                 {% if category.slug %}
-                    <a href="{% url 'category_ads' category.slug %}" class="btn btn-outline-primary btn-sm">
+                    <a href="?category={{ category.slug }}" class="btn btn-outline-primary btn-sm {% if current_category == category.slug %}active{% endif %}">
                         {{ category.name }}
                     </a>
                 {% endif %}
@@ -23,7 +66,7 @@
         <h5>Популярные теги:</h5>
         <div class="d-flex flex-wrap gap-2">
             {% for tag in tags %}
-                <a href="{% url 'tag_ads' tag.slug %}" class="badge" style="background-color: {{ tag.color }}; color: white; text-decoration: none; padding: 8px 12px;">
+                <a href="?tag={{ tag.slug }}" class="badge {% if current_tag == tag.slug %}bg-primary{% else %}" style="background-color: {{ tag.color }};{% endif %} color: white; text-decoration: none; padding: 8px 12px;">
                     {{ tag.name }}
                 </a>
             {% endfor %}
@@ -35,16 +78,29 @@
         <a href="{% url 'advertisement_create' %}" class="btn btn-primary mb-4">Создать объявление</a>
     {% endif %}
 
+    <!-- Статистика -->
+    <div class="alert alert-info mb-4">
+        <small>Найдено объявлений: {{ paginator.count }} | Показано: {{ advertisements|length }}</small>
+    </div>
+
     {% for advertisement in advertisements %}
         <div class="card mb-3">
             <div class="card-body">
-                <h5 class="card-title">
-                    <a href="{% url 'advertisement_detail' advertisement.slug %}">{{ advertisement.title }}</a>
-                </h5>
+                <div class="d-flex justify-content-between align-items-start">
+                    <h5 class="card-title">
+                        <a href="{% url 'advertisement_detail' advertisement.slug %}">{{ advertisement.title }}</a>
+                    </h5>
+                    <span class="badge bg-secondary">
+                        👁️ {{ advertisement.views }}
+                    </span>
+                </div>
+
                 {% if advertisement.cover %}
                     <img src="{{ advertisement.cover.url }}" class="card-img-top mb-2" alt="{{ advertisement.title }}" style="max-height: 200px; object-fit: cover;">
                 {% endif %}
+
                 <p class="card-text">{{ advertisement.description|truncatechars:200 }}</p>
+
                 <p class="card-text">
                     <small class="text-muted">
                         {{ advertisement.price }} руб. | {{ advertisement.city }} |
@@ -54,9 +110,10 @@
                         <a href="{% url 'profile' advertisement.author.username %}">{{ advertisement.author.username }}</a>
                     </small>
                 </p>
+
                 <div class="mt-2">
                     {% for tag in advertisement.tags.all %}
-                        <a href="{% url 'tag_ads' tag.slug %}" class="badge" style="background-color: {{ tag.color }}; color: white; text-decoration: none; margin-right: 5px;">
+                        <a href="?tag={{ tag.slug }}" class="badge" style="background-color: {{ tag.color }}; color: white; text-decoration: none; margin-right: 5px;">
                             {{ tag.name }}
                         </a>
                     {% endfor %}
@@ -64,30 +121,58 @@
             </div>
         </div>
     {% empty %}
-        <p>Объявлений пока нет.</p>
+        <div class="alert alert-warning">
+            <h5>Объявлений не найдено</h5>
+            <p>Попробуйте изменить параметры поиска или <a href="{% url 'advertisement_create' %}">создайте первое объявление</a>.</p>
+        </div>
     {% endfor %}
 
+    <!-- Пагинация с учетом фильтров -->
     {% if is_paginated %}
         <nav aria-label="Page navigation">
-            <ul class="pagination">
+            <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page=1">Первая</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Предыдущая</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                            Первая
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                            Назад
+                        </a>
+                    </li>
                 {% endif %}
 
                 {% for num in page_obj.paginator.page_range %}
                     {% if page_obj.number == num %}
-                        <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
                     {% endif %}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Следующая</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Последняя</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                            Вперед
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                            Последняя
+                        </a>
+                    </li>
                 {% endif %}
             </ul>
         </nav>
+
+        <div class="text-center text-muted mt-2">
+            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+        </div>
     {% endif %}
 {% endblock %}

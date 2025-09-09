@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import HttpResponseRedirect
 from .models import Advertisement, Response, City, Category, Tag
 from .forms import AdvertisementForm, ResponseForm, TagForm
@@ -67,14 +68,55 @@ class AdvertisementListView(ListView):
     model = Advertisement
     template_name = 'ads/home.html'
     context_object_name = 'advertisements'
-    ordering = ['-created_at']
     paginate_by = 10
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Фильтрация по категории
+        category_slug = self.request.GET.get('category')
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
+
+        # Фильтрация по городу
+        city_slug = self.request.GET.get('city')
+        if city_slug:
+            queryset = queryset.filter(city__slug=city_slug)
+
+        # Фильтрация по тегу
+        tag_slug = self.request.GET.get('tag')
+        if tag_slug:
+            queryset = queryset.filter(tags__slug=tag_slug)
+
+        # Поиск
+        search_query = self.request.GET.get('q')
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
+
+        # Сортировка
+        sort_by = self.request.GET.get('sort', '-created_at')
+        if sort_by in ['created_at', '-created_at', 'price', '-price', 'views', '-views']:
+            queryset = queryset.order_by(sort_by)
+
+        return queryset.select_related('author', 'city', 'category').prefetch_related('tags')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = Category.objects.all()
         context['tags'] = Tag.objects.all()[:10]
         context['cities'] = City.objects.all()[:10]
+
+        # Добавляем параметры для пагинации
+        context['current_sort'] = self.request.GET.get('sort', '-created_at')
+        context['current_category'] = self.request.GET.get('category', '')
+        context['current_city'] = self.request.GET.get('city', '')
+        context['current_tag'] = self.request.GET.get('tag', '')
+        context['search_query'] = self.request.GET.get('q', '')
+
         return context
 
 class UserAdvertisementListView(LoginRequiredMixin, ListView):
@@ -92,11 +134,28 @@ class AdvertisementDetailView(DetailView):
 
     def get_object(self, queryset=None):
         slug = self.kwargs.get('slug')
-        return get_object_or_404(Advertisement, slug=slug)
+        advertisement = get_object_or_404(
+            Advertisement.objects.select_related('author', 'city', 'category').prefetch_related('tags'),
+            slug=slug
+        )
+
+        # Увеличиваем счетчик просмотров
+        advertisement.increment_views()
+
+        return advertisement
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['response_form'] = ResponseForm()
+
+        # Похожие объявления (по категории и тегам)
+        advertisement = self.get_object()
+        similar_ads = Advertisement.objects.filter(
+            Q(category=advertisement.category) |
+            Q(tags__in=advertisement.tags.all())
+        ).exclude(id=advertisement.id).distinct()[:4]
+
+        context['similar_ads'] = similar_ads
         return context
 
 class AdvertisementCreateView(LoginRequiredMixin, CreateView):
@@ -214,4 +273,3 @@ class ProfileView(LoginRequiredMixin, DetailView):
         context['received_responses'] = Response.objects.filter(recipient=user).order_by('-created_at')
         context['sent_responses'] = Response.objects.filter(sender=user).order_by('-created_at')
         return context
-
