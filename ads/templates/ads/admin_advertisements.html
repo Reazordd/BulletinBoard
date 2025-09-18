@@ -1,51 +1,16 @@
 {% extends 'ads/base.html' %}
 
-{% block title %}Все объявления{% endblock %}
+{% block title %}Объявления админа{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="mb-4">Все объявления</h1>
+    <h1 class="mb-4">Объявления админа</h1>
 
-    <!-- ✅ Кнопка "Объявления админа" -->
+    <!-- Кнопка "Назад" на все объявления -->
     <div class="mb-3">
-        <a href="{% url 'admin_ads' %}" class="btn btn-warning">Объявления админа</a>
+        <a href="{% url 'home' %}" class="btn btn-secondary">Все объявления</a>
     </div>
 
-    <!-- Форма поиска -->
-    <form method="get" class="form-inline mb-4">
-        <input type="text" name="q" value="{{ search_query }}" placeholder="Поиск..."
-               class="form-control mr-2" />
-        <select name="category" class="form-control mr-2">
-            <option value="">Все категории</option>
-            {% for category in categories %}
-            <option value="{{ category.slug }}"
-                    {% if current_category == category.slug %}selected{% endif %}>
-                {{ category.name }}
-            </option>
-            {% endfor %}
-        </select>
-        <select name="city" class="form-control mr-2">
-            <option value="">Все города</option>
-            {% for city in cities %}
-            <option value="{{ city.slug }}"
-                    {% if current_city == city.slug %}selected{% endif %}>
-                {{ city.name }}
-            </option>
-            {% endfor %}
-        </select>
-        <button type="submit" class="btn btn-primary">Искать</button>
-    </form>
-
-    <!-- Сортировка -->
-    <div class="mb-3">
-        <span>Сортировать по:</span>
-        <a href="?sort=-created_at" class="btn btn-link {% if current_sort == '-created_at' %}font-weight-bold{% endif %}">Новизне</a>
-        <a href="?sort=price" class="btn btn-link {% if current_sort == 'price' %}font-weight-bold{% endif %}">Цене ↑</a>
-        <a href="?sort=-price" class="btn btn-link {% if current_sort == '-price' %}font-weight-bold{% endif %}">Цене ↓</a>
-        <a href="?sort=-views" class="btn btn-link {% if current_sort == '-views' %}font-weight-bold{% endif %}">Популярности</a>
-    </div>
-
-    <!-- Список объявлений -->
     {% for advertisement in advertisements %}
     <div class="card mb-3">
         <div class="card-body">
@@ -67,7 +32,7 @@
         </div>
     </div>
     {% empty %}
-    <p>Пока нет объявлений.</p>
+    <p>У пользователя <strong>admin</strong> пока нет объявлений.</p>
     {% endfor %}
 
     <!-- Пагинация -->
@@ -100,3 +65,4 @@
     </nav>
 </div>
 {% endblock %}
+

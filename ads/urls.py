@@ -5,6 +5,8 @@ from .views_auth import CustomLoginView, CustomSignupView, CustomLogoutView
 urlpatterns = [
     path('', views.AdvertisementListView.as_view(), name='home'),
     path('my-ads/', views.UserAdvertisementListView.as_view(), name='my_ads'),
+    path('admin-ads/', views.AdminAdvertisementListView.as_view(), name='admin_ads'),  # ✅ новый маршрут
+
     path('category/<slug:category_slug>/', views.CategoryAdvertisementListView.as_view(), name='category_ads'),
     path('tag/<slug:tag_slug>/', views.TagAdvertisementListView.as_view(), name='tag_ads'),
     path('tags/', views.TagListView.as_view(), name='tag_list'),
@@ -23,7 +25,6 @@ urlpatterns = [
 
     path('profile/<str:username>/', views.ProfileView.as_view(), name='profile'),
 
-    # Кастомные auth views
     path('accounts/login/', CustomLoginView.as_view(), name='account_login'),
     path('accounts/signup/', CustomSignupView.as_view(), name='account_signup'),
     path('accounts/logout/', CustomLogoutView.as_view(), name='account_logout'),

@@ -1,15 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.db import models
-from django.db.models import Q, Count
-from django.http import HttpResponseRedirect
+from django.db.models import Q
 from .models import Advertisement, Response, City, Category, Tag
 from .forms import AdvertisementForm, ResponseForm, TagForm
+
 
 class CategoryAdvertisementListView(ListView):
     model = Advertisement
@@ -26,6 +25,7 @@ class CategoryAdvertisementListView(ListView):
         context['category'] = self.category
         return context
 
+
 class TagAdvertisementListView(ListView):
     model = Advertisement
     template_name = 'ads/tag_ads.html'
@@ -41,6 +41,7 @@ class TagAdvertisementListView(ListView):
         context['tag'] = self.tag
         return context
 
+
 class TagCreateView(LoginRequiredMixin, CreateView):
     model = Tag
     form_class = TagForm
@@ -51,11 +52,13 @@ class TagCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Тег успешно создан!')
         return super().form_valid(form)
 
+
 class TagListView(ListView):
     model = Tag
     template_name = 'ads/tag_list.html'
     context_object_name = 'tags'
     paginate_by = 20
+
 
 class CityListView(ListView):
     model = City
@@ -63,6 +66,7 @@ class CityListView(ListView):
     context_object_name = 'cities'
     paginate_by = 50
     ordering = ['name']
+
 
 class AdvertisementListView(ListView):
     model = Advertisement
@@ -74,22 +78,18 @@ class AdvertisementListView(ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        # Фильтрация по категории
         category_slug = self.request.GET.get('category')
         if category_slug:
             queryset = queryset.filter(category__slug=category_slug)
 
-        # Фильтрация по городу
         city_slug = self.request.GET.get('city')
         if city_slug:
             queryset = queryset.filter(city__slug=city_slug)
 
-        # Фильтрация по тегу
         tag_slug = self.request.GET.get('tag')
         if tag_slug:
             queryset = queryset.filter(tags__slug=tag_slug)
 
-        # Поиск
         search_query = self.request.GET.get('q')
         if search_query:
             queryset = queryset.filter(
@@ -97,7 +97,6 @@ class AdvertisementListView(ListView):
                 Q(description__icontains=search_query)
             )
 
-        # Сортировка
         sort_by = self.request.GET.get('sort', '-created_at')
         if sort_by in ['created_at', '-created_at', 'price', '-price', 'views', '-views']:
             queryset = queryset.order_by(sort_by)
@@ -109,15 +108,13 @@ class AdvertisementListView(ListView):
         context['categories'] = Category.objects.all()
         context['tags'] = Tag.objects.all()[:10]
         context['cities'] = City.objects.all()[:10]
-
-        # Добавляем параметры для пагинации
         context['current_sort'] = self.request.GET.get('sort', '-created_at')
         context['current_category'] = self.request.GET.get('category', '')
         context['current_city'] = self.request.GET.get('city', '')
         context['current_tag'] = self.request.GET.get('tag', '')
         context['search_query'] = self.request.GET.get('q', '')
-
         return context
+
 
 class UserAdvertisementListView(LoginRequiredMixin, ListView):
     model = Advertisement
@@ -127,6 +124,18 @@ class UserAdvertisementListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return Advertisement.objects.filter(author=self.request.user).order_by('-created_at')
+
+
+# ✅ Новый список только для объявлений админа
+class AdminAdvertisementListView(ListView):
+    model = Advertisement
+    template_name = 'ads/admin_advertisements.html'
+    context_object_name = 'advertisements'
+    paginate_by = 10
+
+    def get_queryset(self):
+        return Advertisement.objects.filter(author__username__iexact='admin').order_by('-created_at')
+
 
 class AdvertisementDetailView(DetailView):
     model = Advertisement
@@ -138,25 +147,20 @@ class AdvertisementDetailView(DetailView):
             Advertisement.objects.select_related('author', 'city', 'category').prefetch_related('tags'),
             slug=slug
         )
-
-        # Увеличиваем счетчик просмотров
-        advertisement.increment_views()
-
+        advertisement.increment_views()  # ✅ увеличиваем просмотры
         return advertisement
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['response_form'] = ResponseForm()
-
-        # Похожие объявления (по категории и тегам)
         advertisement = self.get_object()
         similar_ads = Advertisement.objects.filter(
             Q(category=advertisement.category) |
             Q(tags__in=advertisement.tags.all())
         ).exclude(id=advertisement.id).distinct()[:4]
-
         context['similar_ads'] = similar_ads
         return context
+
 
 class AdvertisementCreateView(LoginRequiredMixin, CreateView):
     model = Advertisement
@@ -167,6 +171,7 @@ class AdvertisementCreateView(LoginRequiredMixin, CreateView):
         form.instance.author = self.request.user
         messages.success(self.request, 'Объявление успешно создано!')
         return super().form_valid(form)
+
 
 class AdvertisementUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Advertisement
@@ -186,6 +191,7 @@ class AdvertisementUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateVie
         advertisement = self.get_object()
         return self.request.user == advertisement.author
 
+
 class AdvertisementDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Advertisement
     template_name = 'ads/advertisement_confirm_delete.html'
@@ -203,6 +209,7 @@ class AdvertisementDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteVie
         messages.success(request, 'Объявление успешно удалено!')
         return super().delete(request, *args, **kwargs)
 
+
 class ResponseDetailView(LoginRequiredMixin, DetailView):
     model = Response
     template_name = 'ads/response_detail.html'
@@ -212,6 +219,7 @@ class ResponseDetailView(LoginRequiredMixin, DetailView):
             models.Q(sender=self.request.user) |
             models.Q(recipient=self.request.user)
         )
+
 
 class ResponseCreateView(LoginRequiredMixin, CreateView):
     form_class = ResponseForm
@@ -235,6 +243,7 @@ class ResponseCreateView(LoginRequiredMixin, CreateView):
         context['advertisement'] = self.advertisement
         return context
 
+
 class ResponseAcceptView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         response = get_object_or_404(Response, pk=self.kwargs['pk'])
@@ -247,6 +256,7 @@ class ResponseAcceptView(LoginRequiredMixin, UserPassesTestMixin, View):
         messages.success(request, 'Отклик принят!')
         return redirect('profile', username=request.user.username)
 
+
 class ResponseRejectView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         response = get_object_or_404(Response, pk=self.kwargs['pk'])
@@ -258,6 +268,7 @@ class ResponseRejectView(LoginRequiredMixin, UserPassesTestMixin, View):
         response.save()
         messages.success(request, 'Отклик отклонён.')
         return redirect('profile', username=request.user.username)
+
 
 class ProfileView(LoginRequiredMixin, DetailView):
     model = User
@@ -273,3 +284,4 @@ class ProfileView(LoginRequiredMixin, DetailView):
         context['received_responses'] = Response.objects.filter(recipient=user).order_by('-created_at')
         context['sent_responses'] = Response.objects.filter(sender=user).order_by('-created_at')
         return context
+
