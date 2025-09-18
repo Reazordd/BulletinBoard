@@ -116,7 +116,6 @@ class AdvertisementListView(ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        # Фильтрация
         category_slug = self.request.GET.get('category')
         if category_slug:
             queryset = queryset.filter(category__slug=category_slug)
@@ -129,7 +128,6 @@ class AdvertisementListView(ListView):
         if tag_slug:
             queryset = queryset.filter(tags__slug=tag_slug)
 
-        # Поиск
         search_query = self.request.GET.get('q')
         if search_query:
             queryset = queryset.filter(
@@ -137,7 +135,6 @@ class AdvertisementListView(ListView):
                 Q(description__icontains=search_query)
             )
 
-        # Сортировка
         sort_by = self.request.GET.get('sort', '-created_at')
         if sort_by in ['created_at', '-created_at', 'price', '-price', 'views', '-views']:
             queryset = queryset.order_by(sort_by)
@@ -274,7 +271,6 @@ class AdvertisementDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteVie
         return super().delete(request, *args, **kwargs)
 
 
-# ✅ Вьюхи для откликов
 class ResponseDetailView(LoginRequiredMixin, DetailView):
     model = Response
     template_name = 'ads/response_detail.html'
@@ -327,6 +323,24 @@ class ResponseRejectView(LoginRequiredMixin, UserPassesTestMixin, View):
         response.save()
         messages.success(request, 'Отклик отклонён.')
         return redirect('profile', username=request.user.username)
+
+
+# ✅ Профиль пользователя
+class ProfileView(DetailView):
+    model = User
+    template_name = 'ads/profile.html'
+    context_object_name = 'profile_user'
+    slug_field = 'username'
+    slug_url_kwarg = 'username'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.get_object()
+        context['advertisements'] = Advertisement.objects.filter(author=user)
+        context['received_responses'] = Response.objects.filter(recipient=user).select_related('advertisement', 'sender')
+        context['sent_responses'] = Response.objects.filter(sender=user).select_related('advertisement', 'recipient')
+        return context
+
 
 
 

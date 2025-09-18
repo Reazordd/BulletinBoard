@@ -2,76 +2,76 @@
 {% block title %}Профиль {{ profile_user.username }}{% endblock %}
 
 {% block content %}
-    <h1>Профиль пользователя: {{ profile_user.username }}</h1>
+<h1>Профиль пользователя: {{ profile_user.username }}</h1>
 
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <h3>Мои объявления</h3>
-            {% for ad in advertisements %}
-                <div class="card mb-2">
-                    <div class="card-body">
-                        <h5><a href="{% url 'advertisement_detail' ad.slug %}">{{ ad.title }}</a></h5>
-                        <p>{{ ad.price }} руб., {{ ad.city }}</p>
-                        <small class="text-muted">
-                            Создано: <time datetime="{{ ad.created_at|date:'c' }}">{{ ad.created_at|date:"d.m.Y H:i" }}</time><br>
-                            Обновлено: <time datetime="{{ ad.updated_at|date:'c' }}">{{ ad.updated_at|date:"d.m.Y H:i" }}</time>
-                        </small>
-                        {% if ad.cover %}
-                            <img src="{{ ad.cover.url }}" alt="{{ ad.title }}" style="max-height: 100px; object-fit: cover;" class="img-fluid mt-2">
-                        {% endif %}
-                    </div>
-                </div>
-            {% empty %}
-                <p>Нет объявлений.</p>
-            {% endfor %}
+<div class="row mt-4">
+    <div class="col-md-6">
+        <h3>Мои объявления</h3>
+        {% for ad in advertisements %}
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5><a href="{% url 'advertisement_detail' ad.slug %}">{{ ad.title }}</a></h5>
+                <p>{{ ad.price }} руб., {{ ad.city }}</p>
+                <small class="text-muted">
+                    Создано: <time datetime="{{ ad.created_at|date:'c' }}">{{ ad.created_at|date:"d.m.Y H:i" }}</time><br>
+                    Обновлено: <time datetime="{{ ad.updated_at|date:'c' }}">{{ ad.updated_at|date:"d.m.Y H:i" }}</time>
+                </small>
+                {% if ad.cover %}
+                <img src="{{ ad.cover.url }}" alt="{{ ad.title }}" style="max-height: 100px; object-fit: cover;" class="img-fluid mt-2">
+                {% endif %}
+            </div>
         </div>
-
-        <div class="col-md-6">
-            <h3>Отклики на мои объявления</h3>
-            {% for response in received_responses %}
-                <div class="card mb-2 {% if response.status == 'accepted' %}border-success{% elif response.status == 'rejected' %}border-danger{% endif %}">
-                    <div class="card-body">
-                        <h5>
-                            <a href="{% url 'advertisement_detail' response.advertisement.slug %}">
-                                {{ response.advertisement.title }}
-                            </a>
-                        </h5>
-                        <p>{{ response.text }}</p>
-                        <p>
-                            От: <a href="{% url 'profile' response.sender.username %}">{{ response.sender.username }}</a> |
-                            <time datetime="{{ response.created_at|date:'c' }}">{{ response.created_at|date:"d.m.Y H:i" }}</time> |
-                            Статус: {{ response.get_status_display }}
-                        </p>
-                        {% if response.status == 'new' and user == profile_user %}
-                            <a href="{% url 'accept_response' response.pk %}" class="btn btn-success btn-sm">Принять</a>
-                            <a href="{% url 'reject_response' response.pk %}" class="btn btn-danger btn-sm">Отклонить</a>
-                        {% endif %}
-                    </div>
-                </div>
-            {% empty %}
-                <p>Нет откликов.</p>
-            {% endfor %}
-
-            <h3 class="mt-4">Мои отклики</h3>
-            {% for response in sent_responses %}
-                <div class="card mb-2 {% if response.status == 'accepted' %}border-success{% elif response.status == 'rejected' %}border-danger{% endif %}">
-                    <div class="card-body">
-                        <h5>
-                            <a href="{% url 'advertisement_detail' response.advertisement.slug %}">
-                                {{ response.advertisement.title }}
-                            </a>
-                        </h5>
-                        <p>{{ response.text }}</p>
-                        <p>
-                            Кому: <a href="{% url 'profile' response.recipient.username %}">{{ response.recipient.username }}</a> |
-                            <time datetime="{{ response.created_at|date:'c' }}">{{ response.created_at|date:"d.m.Y H:i" }}</time> |
-                            Статус: {{ response.get_status_display }}
-                        </p>
-                    </div>
-                </div>
-            {% empty %}
-                <p>Вы не оставляли откликов.</p>
-            {% endfor %}
-        </div>
+        {% empty %}
+        <p>Нет объявлений.</p>
+        {% endfor %}
     </div>
+
+    <div class="col-md-6">
+        <h3>Отклики на мои объявления</h3>
+        {% for response in received_responses %}
+        <div class="card mb-2 {% if response.status == 'accepted' %}border-success{% elif response.status == 'rejected' %}border-danger{% endif %}">
+            <div class="card-body">
+                <h5>
+                    <a href="{% url 'advertisement_detail' response.advertisement.slug %}">
+                        {{ response.advertisement.title }}
+                    </a>
+                </h5>
+                <p>{{ response.text }}</p>
+                <p>
+                    От: <a href="{% url 'profile' response.sender.username %}">{{ response.sender.username }}</a> |
+                    <time datetime="{{ response.created_at|date:'c' }}">{{ response.created_at|date:"d.m.Y H:i" }}</time> |
+                    Статус: {{ response.get_status_display }}
+                </p>
+                {% if response.status == 'new' and user == profile_user %}
+                <a href="{% url 'accept_response' response.pk %}" class="btn btn-success btn-sm">Принять</a>
+                <a href="{% url 'reject_response' response.pk %}" class="btn btn-danger btn-sm">Отклонить</a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <p>Нет откликов.</p>
+        {% endfor %}
+
+        <h3 class="mt-4">Мои отклики</h3>
+        {% for response in sent_responses %}
+        <div class="card mb-2 {% if response.status == 'accepted' %}border-success{% elif response.status == 'rejected' %}border-danger{% endif %}">
+            <div class="card-body">
+                <h5>
+                    <a href="{% url 'advertisement_detail' response.advertisement.slug %}">
+                        {{ response.advertisement.title }}
+                    </a>
+                </h5>
+                <p>{{ response.text }}</p>
+                <p>
+                    Кому: <a href="{% url 'profile' response.recipient.username %}">{{ response.recipient.username }}</a> |
+                    <time datetime="{{ response.created_at|date:'c' }}">{{ response.created_at|date:"d.m.Y H:i" }}</time> |
+                    Статус: {{ response.get_status_display }}
+                </p>
+            </div>
+        </div>
+        {% empty %}
+        <p>Вы не оставляли откликов.</p>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}
