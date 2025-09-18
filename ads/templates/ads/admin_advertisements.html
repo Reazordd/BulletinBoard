@@ -6,9 +6,18 @@
 <div class="container mt-4">
     <h1 class="mb-4">Объявления админа</h1>
 
-    <!-- Кнопка "Назад" на все объявления -->
+    <!-- Кнопки навигации -->
     <div class="mb-3">
         <a href="{% url 'home' %}" class="btn btn-secondary">Все объявления</a>
+    </div>
+
+    <!-- Сортировка -->
+    <div class="mb-3">
+        <span>Сортировать по:</span>
+        <a href="?sort=-created_at&{{ querystring }}" class="btn btn-link {% if request.GET.sort == '-created_at' or not request.GET.sort %}font-weight-bold{% endif %}">Новизне</a>
+        <a href="?sort=price&{{ querystring }}" class="btn btn-link {% if request.GET.sort == 'price' %}font-weight-bold{% endif %}">Цене ↑</a>
+        <a href="?sort=-price&{{ querystring }}" class="btn btn-link {% if request.GET.sort == '-price' %}font-weight-bold{% endif %}">Цене ↓</a>
+        <a href="?sort=-views&{{ querystring }}" class="btn btn-link {% if request.GET.sort == '-views' %}font-weight-bold{% endif %}">Популярности</a>
     </div>
 
     {% for advertisement in advertisements %}
@@ -40,7 +49,7 @@
         <ul class="pagination">
             {% if advertisements.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ advertisements.previous_page_number }}">Назад</a>
+                <a class="page-link" href="?page={{ advertisements.previous_page_number }}&{{ querystring }}">Назад</a>
             </li>
             {% endif %}
 
@@ -51,14 +60,14 @@
             </li>
             {% elif num > advertisements.number|add:'-3' and num < advertisements.number|add:'3' %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                <a class="page-link" href="?page={{ num }}&{{ querystring }}">{{ num }}</a>
             </li>
             {% endif %}
             {% endfor %}
 
             {% if advertisements.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ advertisements.next_page_number }}">Вперёд</a>
+                <a class="page-link" href="?page={{ advertisements.next_page_number }}&{{ querystring }}">Вперёд</a>
             </li>
             {% endif %}
         </ul>

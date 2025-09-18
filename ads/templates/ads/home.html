@@ -6,7 +6,6 @@
 <div class="container mt-4">
     <h1 class="mb-4">Все объявления</h1>
 
-    <!-- ✅ Кнопка "Объявления админа" -->
     <div class="mb-3">
         <a href="{% url 'admin_ads' %}" class="btn btn-warning">Объявления админа</a>
     </div>
@@ -39,10 +38,10 @@
     <!-- Сортировка -->
     <div class="mb-3">
         <span>Сортировать по:</span>
-        <a href="?sort=-created_at" class="btn btn-link {% if current_sort == '-created_at' %}font-weight-bold{% endif %}">Новизне</a>
-        <a href="?sort=price" class="btn btn-link {% if current_sort == 'price' %}font-weight-bold{% endif %}">Цене ↑</a>
-        <a href="?sort=-price" class="btn btn-link {% if current_sort == '-price' %}font-weight-bold{% endif %}">Цене ↓</a>
-        <a href="?sort=-views" class="btn btn-link {% if current_sort == '-views' %}font-weight-bold{% endif %}">Популярности</a>
+        <a href="?sort=-created_at&{{ querystring }}" class="btn btn-link {% if current_sort == '-created_at' %}font-weight-bold{% endif %}">Новизне</a>
+        <a href="?sort=price&{{ querystring }}" class="btn btn-link {% if current_sort == 'price' %}font-weight-bold{% endif %}">Цене ↑</a>
+        <a href="?sort=-price&{{ querystring }}" class="btn btn-link {% if current_sort == '-price' %}font-weight-bold{% endif %}">Цене ↓</a>
+        <a href="?sort=-views&{{ querystring }}" class="btn btn-link {% if current_sort == '-views' %}font-weight-bold{% endif %}">Популярности</a>
     </div>
 
     <!-- Список объявлений -->
@@ -75,7 +74,7 @@
         <ul class="pagination">
             {% if advertisements.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ advertisements.previous_page_number }}">Назад</a>
+                <a class="page-link" href="?page={{ advertisements.previous_page_number }}&{{ querystring }}">Назад</a>
             </li>
             {% endif %}
 
@@ -86,14 +85,14 @@
             </li>
             {% elif num > advertisements.number|add:'-3' and num < advertisements.number|add:'3' %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                <a class="page-link" href="?page={{ num }}&{{ querystring }}">{{ num }}</a>
             </li>
             {% endif %}
             {% endfor %}
 
             {% if advertisements.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ advertisements.next_page_number }}">Вперёд</a>
+                <a class="page-link" href="?page={{ advertisements.next_page_number }}&{{ querystring }}">Вперёд</a>
             </li>
             {% endif %}
         </ul>

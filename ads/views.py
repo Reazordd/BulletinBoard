@@ -18,11 +18,25 @@ class CategoryAdvertisementListView(ListView):
 
     def get_queryset(self):
         self.category = get_object_or_404(Category, slug=self.kwargs['category_slug'])
-        return Advertisement.objects.filter(category=self.category).order_by('-created_at')
+        queryset = Advertisement.objects.filter(category=self.category)
+
+        sort_by = self.request.GET.get('sort', '-created_at')
+        if sort_by in ['created_at', '-created_at', 'price', '-price', 'views', '-views']:
+            queryset = queryset.order_by(sort_by)
+        else:
+            queryset = queryset.order_by('-created_at')
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['category'] = self.category
+
+        params = self.request.GET.copy()
+        if 'page' in params:
+            params.pop('page')
+        context['querystring'] = params.urlencode()
+
         return context
 
 
@@ -34,11 +48,25 @@ class TagAdvertisementListView(ListView):
 
     def get_queryset(self):
         self.tag = get_object_or_404(Tag, slug=self.kwargs['tag_slug'])
-        return Advertisement.objects.filter(tags=self.tag).order_by('-created_at')
+        queryset = Advertisement.objects.filter(tags=self.tag)
+
+        sort_by = self.request.GET.get('sort', '-created_at')
+        if sort_by in ['created_at', '-created_at', 'price', '-price', 'views', '-views']:
+            queryset = queryset.order_by(sort_by)
+        else:
+            queryset = queryset.order_by('-created_at')
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['tag'] = self.tag
+
+        params = self.request.GET.copy()
+        if 'page' in params:
+            params.pop('page')
+        context['querystring'] = params.urlencode()
+
         return context
 
 
@@ -67,6 +95,16 @@ class CityListView(ListView):
     paginate_by = 50
     ordering = ['name']
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        params = self.request.GET.copy()
+        if 'page' in params:
+            params.pop('page')
+        context['querystring'] = params.urlencode()
+
+        return context
+
 
 class AdvertisementListView(ListView):
     model = Advertisement
@@ -78,6 +116,7 @@ class AdvertisementListView(ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
 
+        # Фильтрация
         category_slug = self.request.GET.get('category')
         if category_slug:
             queryset = queryset.filter(category__slug=category_slug)
@@ -90,6 +129,7 @@ class AdvertisementListView(ListView):
         if tag_slug:
             queryset = queryset.filter(tags__slug=tag_slug)
 
+        # Поиск
         search_query = self.request.GET.get('q')
         if search_query:
             queryset = queryset.filter(
@@ -97,6 +137,7 @@ class AdvertisementListView(ListView):
                 Q(description__icontains=search_query)
             )
 
+        # Сортировка
         sort_by = self.request.GET.get('sort', '-created_at')
         if sort_by in ['created_at', '-created_at', 'price', '-price', 'views', '-views']:
             queryset = queryset.order_by(sort_by)
@@ -113,6 +154,12 @@ class AdvertisementListView(ListView):
         context['current_city'] = self.request.GET.get('city', '')
         context['current_tag'] = self.request.GET.get('tag', '')
         context['search_query'] = self.request.GET.get('q', '')
+
+        params = self.request.GET.copy()
+        if 'page' in params:
+            params.pop('page')
+        context['querystring'] = params.urlencode()
+
         return context
 
 
@@ -126,7 +173,6 @@ class UserAdvertisementListView(LoginRequiredMixin, ListView):
         return Advertisement.objects.filter(author=self.request.user).order_by('-created_at')
 
 
-# ✅ Новый список только для объявлений админа
 class AdminAdvertisementListView(ListView):
     model = Advertisement
     template_name = 'ads/admin_advertisements.html'
@@ -134,7 +180,25 @@ class AdminAdvertisementListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return Advertisement.objects.filter(author__username__iexact='admin').order_by('-created_at')
+        queryset = Advertisement.objects.filter(author__username__iexact='admin')
+
+        sort_by = self.request.GET.get('sort', '-created_at')
+        if sort_by in ['created_at', '-created_at', 'price', '-price', 'views', '-views']:
+            queryset = queryset.order_by(sort_by)
+        else:
+            queryset = queryset.order_by('-created_at')
+
+        return queryset.select_related('author', 'city', 'category').prefetch_related('tags')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        params = self.request.GET.copy()
+        if 'page' in params:
+            params.pop('page')
+        context['querystring'] = params.urlencode()
+
+        return context
 
 
 class AdvertisementDetailView(DetailView):
@@ -147,7 +211,7 @@ class AdvertisementDetailView(DetailView):
             Advertisement.objects.select_related('author', 'city', 'category').prefetch_related('tags'),
             slug=slug
         )
-        advertisement.increment_views()  # ✅ увеличиваем просмотры
+        advertisement.increment_views()
         return advertisement
 
     def get_context_data(self, **kwargs):
@@ -210,6 +274,7 @@ class AdvertisementDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteVie
         return super().delete(request, *args, **kwargs)
 
 
+# ✅ Вьюхи для откликов
 class ResponseDetailView(LoginRequiredMixin, DetailView):
     model = Response
     template_name = 'ads/response_detail.html'
@@ -222,26 +287,20 @@ class ResponseDetailView(LoginRequiredMixin, DetailView):
 
 
 class ResponseCreateView(LoginRequiredMixin, CreateView):
+    model = Response
     form_class = ResponseForm
     template_name = 'ads/response_form.html'
 
-    def dispatch(self, request, *args, **kwargs):
-        self.advertisement = get_object_or_404(Advertisement, slug=kwargs['slug'])
-        return super().dispatch(request, *args, **kwargs)
-
     def form_valid(self, form):
-        response = form.save(commit=False)
-        response.advertisement = self.advertisement
-        response.sender = self.request.user
-        response.recipient = self.advertisement.author
-        response.save()
-        messages.success(self.request, 'Ваш отклик успешно отправлен!')
-        return redirect('advertisement_detail', slug=self.advertisement.slug)
+        advertisement = get_object_or_404(Advertisement, slug=self.kwargs['slug'])
+        form.instance.sender = self.request.user
+        form.instance.recipient = advertisement.author
+        form.instance.advertisement = advertisement
+        messages.success(self.request, 'Ваш отклик отправлен!')
+        return super().form_valid(form)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['advertisement'] = self.advertisement
-        return context
+    def get_success_url(self):
+        return reverse_lazy('advertisement_detail', kwargs={'slug': self.kwargs['slug']})
 
 
 class ResponseAcceptView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -270,18 +329,4 @@ class ResponseRejectView(LoginRequiredMixin, UserPassesTestMixin, View):
         return redirect('profile', username=request.user.username)
 
 
-class ProfileView(LoginRequiredMixin, DetailView):
-    model = User
-    template_name = 'ads/profile.html'
-    context_object_name = 'profile_user'
-    slug_field = 'username'
-    slug_url_kwarg = 'username'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.get_object()
-        context['advertisements'] = Advertisement.objects.filter(author=user)
-        context['received_responses'] = Response.objects.filter(recipient=user).order_by('-created_at')
-        context['sent_responses'] = Response.objects.filter(sender=user).order_by('-created_at')
-        return context
 
